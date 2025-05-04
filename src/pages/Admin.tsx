@@ -28,23 +28,107 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { doctors, cities, specialties } from "@/lib/data";
+import { doctors, cities, specialties, addDoctor } from "@/lib/data";
 import Layout from "@/components/Layout";
+import { v4 as uuidv4 } from 'uuid';
 
 const Admin = () => {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
+  const [doctorsList, setDoctorsList] = useState(doctors);
+  
+  // Form state
+  const [newDoctor, setNewDoctor] = useState({
+    name: "",
+    specialty: "",
+    city: "",
+    address: "",
+    phone: "",
+    email: "",
+    fee: "",
+    experience: "",
+    bio: "",
+    image: "https://randomuser.me/api/portraits/men/1.jpg",
+  });
   
   // Filter doctors based on search term
-  const filteredDoctors = doctors.filter(
+  const filteredDoctors = doctorsList.filter(
     (doctor) =>
       doctor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       doctor.specialty.toLowerCase().includes(searchTerm.toLowerCase()) ||
       doctor.city.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { id, value } = e.target;
+    setNewDoctor({
+      ...newDoctor,
+      [id]: value,
+    });
+  };
+  
+  const handleSelectChange = (field: string, value: string) => {
+    setNewDoctor({
+      ...newDoctor,
+      [field]: value,
+    });
+  };
+  
   const handleAddDoctor = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate form
+    if (!newDoctor.name || !newDoctor.specialty || !newDoctor.city) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+        duration: 3000,
+      });
+      return;
+    }
+    
+    // Create new doctor object
+    const doctorToAdd = {
+      id: uuidv4(),
+      name: newDoctor.name,
+      specialty: specialties.find(s => s.id === newDoctor.specialty)?.name || newDoctor.specialty,
+      city: cities.find(c => c.id === newDoctor.city)?.name || newDoctor.city,
+      address: newDoctor.address,
+      bio: newDoctor.bio || `${newDoctor.name} is a healthcare professional specializing in ${newDoctor.specialty}.`,
+      image: newDoctor.image || "https://randomuser.me/api/portraits/men/1.jpg",
+      fee: parseInt(newDoctor.fee) || 1000,
+      experience: parseInt(newDoctor.experience) || 5,
+      phone: newDoctor.phone,
+      email: newDoctor.email,
+      availability: {
+        days: ["Monday", "Wednesday", "Friday"],
+        hours: "10:00 AM - 4:00 PM",
+      },
+      rating: 4.5,
+      reviews: 0,
+    };
+    
+    // Add to local state
+    setDoctorsList([doctorToAdd, ...doctorsList]);
+    
+    // Add to data module
+    addDoctor(doctorToAdd);
+    
+    // Reset form
+    setNewDoctor({
+      name: "",
+      specialty: "",
+      city: "",
+      address: "",
+      phone: "",
+      email: "",
+      fee: "",
+      experience: "",
+      bio: "",
+      image: "https://randomuser.me/api/portraits/men/1.jpg",
+    });
+    
     toast({
       title: "Doctor Added",
       description: "The new doctor has been added successfully.",
@@ -62,6 +146,9 @@ const Admin = () => {
   };
   
   const handleDeleteDoctor = (id: string) => {
+    const updatedDoctors = doctorsList.filter(doctor => doctor.id !== id);
+    setDoctorsList(updatedDoctors);
+    
     toast({
       title: "Doctor Deleted",
       description: `Doctor with ID ${id} has been deleted successfully.`,
@@ -164,12 +251,21 @@ const Admin = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <Label htmlFor="name">Doctor Name</Label>
-                      <Input id="name" placeholder="Dr. Full Name" required />
+                      <Input 
+                        id="name" 
+                        placeholder="Dr. Full Name" 
+                        value={newDoctor.name}
+                        onChange={handleInputChange}
+                        required 
+                      />
                     </div>
                     
                     <div className="space-y-2">
                       <Label htmlFor="specialty">Specialty</Label>
-                      <Select>
+                      <Select
+                        value={newDoctor.specialty}
+                        onValueChange={(value) => handleSelectChange("specialty", value)}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select specialty" />
                         </SelectTrigger>
@@ -185,7 +281,10 @@ const Admin = () => {
                     
                     <div className="space-y-2">
                       <Label htmlFor="city">City</Label>
-                      <Select>
+                      <Select
+                        value={newDoctor.city}
+                        onValueChange={(value) => handleSelectChange("city", value)}
+                      >
                         <SelectTrigger>
                           <SelectValue placeholder="Select city" />
                         </SelectTrigger>
@@ -201,38 +300,83 @@ const Admin = () => {
                     
                     <div className="space-y-2">
                       <Label htmlFor="address">Address</Label>
-                      <Input id="address" placeholder="Clinic/Hospital Address" required />
+                      <Input 
+                        id="address" 
+                        placeholder="Clinic/Hospital Address" 
+                        value={newDoctor.address}
+                        onChange={handleInputChange}
+                        required 
+                      />
                     </div>
                     
                     <div className="space-y-2">
                       <Label htmlFor="phone">Phone Number</Label>
-                      <Input id="phone" placeholder="Phone Number" required />
+                      <Input 
+                        id="phone" 
+                        placeholder="Phone Number" 
+                        value={newDoctor.phone}
+                        onChange={handleInputChange}
+                        required 
+                      />
                     </div>
                     
                     <div className="space-y-2">
                       <Label htmlFor="email">Email</Label>
-                      <Input id="email" type="email" placeholder="Email Address" required />
+                      <Input 
+                        id="email" 
+                        type="email" 
+                        placeholder="Email Address" 
+                        value={newDoctor.email}
+                        onChange={handleInputChange}
+                        required 
+                      />
                     </div>
                     
                     <div className="space-y-2">
                       <Label htmlFor="fee">Consultation Fee (₹)</Label>
-                      <Input id="fee" type="number" placeholder="Amount in INR" required />
+                      <Input 
+                        id="fee" 
+                        type="number" 
+                        placeholder="Amount in INR" 
+                        value={newDoctor.fee}
+                        onChange={handleInputChange}
+                        required 
+                      />
                     </div>
                     
                     <div className="space-y-2">
                       <Label htmlFor="experience">Experience (Years)</Label>
-                      <Input id="experience" type="number" placeholder="Years of Experience" required />
+                      <Input 
+                        id="experience" 
+                        type="number" 
+                        placeholder="Years of Experience" 
+                        value={newDoctor.experience}
+                        onChange={handleInputChange}
+                        required 
+                      />
                     </div>
                   </div>
                   
                   <div className="space-y-2">
                     <Label htmlFor="bio">Bio/Description</Label>
-                    <Textarea id="bio" placeholder="Doctor's bio and qualifications" rows={4} required />
+                    <Textarea 
+                      id="bio" 
+                      placeholder="Doctor's bio and qualifications" 
+                      rows={4} 
+                      value={newDoctor.bio}
+                      onChange={handleInputChange}
+                      required 
+                    />
                   </div>
                   
                   <div className="space-y-2">
                     <Label htmlFor="image">Profile Image URL</Label>
-                    <Input id="image" placeholder="https://example.com/image.jpg" />
+                    <Input 
+                      id="image" 
+                      placeholder="https://example.com/image.jpg" 
+                      value={newDoctor.image}
+                      onChange={handleInputChange}
+                    />
                   </div>
                   
                   <Button type="submit" className="bg-medical-600 hover:bg-medical-700">

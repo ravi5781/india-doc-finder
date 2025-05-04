@@ -52,7 +52,8 @@ export const specialties: Specialty[] = [
   { id: "ent", name: "ENT Specialist" },
 ];
 
-export const doctors: Doctor[] = [
+// This array will store all the doctors data
+let doctorsData = [
   {
     id: "1",
     name: "Dr. Anil Sharma",
@@ -434,6 +435,15 @@ export const doctors: Doctor[] = [
     reviews: 105,
   },
 ];
+
+// Export the doctors array from the data
+export const doctors = doctorsData;
+
+// Add a new doctor to the data
+export const addDoctor = (doctor: Doctor) => {
+  doctorsData = [doctor, ...doctorsData];
+  return doctor;
+};
 
 // Export a function to filter doctors
 export const filterDoctors = (cityFilter: string = "", specialtyFilter: string = "") => {
