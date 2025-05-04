@@ -28,17 +28,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { doctors, cities, specialties, addDoctor } from "@/lib/data";
+import { doctors, cities, specialties, addDoctor, appointments } from "@/lib/data";
 import Layout from "@/components/Layout";
 import { v4 as uuidv4 } from 'uuid';
+import { Check, X } from "lucide-react";
 
 const Admin = () => {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [doctorsList, setDoctorsList] = useState(doctors);
+  const [appointmentsList, setAppointmentsList] = useState(appointments);
+  const [isEditing, setIsEditing] = useState(false);
   
   // Form state
   const [newDoctor, setNewDoctor] = useState({
+    id: "",
     name: "",
     specialty: "",
     city: "",
@@ -90,7 +94,7 @@ const Admin = () => {
     
     // Create new doctor object
     const doctorToAdd = {
-      id: uuidv4(),
+      id: isEditing ? newDoctor.id : uuidv4(),
       name: newDoctor.name,
       specialty: specialties.find(s => s.id === newDoctor.specialty)?.name || newDoctor.specialty,
       city: cities.find(c => c.id === newDoctor.city)?.name || newDoctor.city,
@@ -109,14 +113,34 @@ const Admin = () => {
       reviews: 0,
     };
     
-    // Add to local state
-    setDoctorsList([doctorToAdd, ...doctorsList]);
-    
-    // Add to data module
-    addDoctor(doctorToAdd);
+    if (isEditing) {
+      // Update existing doctor
+      const updatedList = doctorsList.map(doctor => 
+        doctor.id === doctorToAdd.id ? doctorToAdd : doctor
+      );
+      setDoctorsList(updatedList);
+      
+      toast({
+        title: "Doctor Updated",
+        description: "The doctor information has been updated successfully.",
+        duration: 3000,
+      });
+      setIsEditing(false);
+    } else {
+      // Add new doctor
+      setDoctorsList([doctorToAdd, ...doctorsList]);
+      addDoctor(doctorToAdd);
+      
+      toast({
+        title: "Doctor Added",
+        description: "The new doctor has been added successfully.",
+        duration: 3000,
+      });
+    }
     
     // Reset form
     setNewDoctor({
+      id: "",
       name: "",
       specialty: "",
       city: "",
@@ -128,12 +152,33 @@ const Admin = () => {
       bio: "",
       image: "https://randomuser.me/api/portraits/men/1.jpg",
     });
+  };
+  
+  const handleEditDoctor = (doctor: any) => {
+    // Find specialty and city IDs from names
+    const specialtyId = specialties.find(s => s.name === doctor.specialty)?.id || "";
+    const cityId = cities.find(c => c.name === doctor.city)?.id || "";
     
-    toast({
-      title: "Doctor Added",
-      description: "The new doctor has been added successfully.",
-      duration: 3000,
+    setNewDoctor({
+      id: doctor.id,
+      name: doctor.name,
+      specialty: specialtyId,
+      city: cityId,
+      address: doctor.address,
+      phone: doctor.phone,
+      email: doctor.email,
+      fee: doctor.fee.toString(),
+      experience: doctor.experience.toString(),
+      bio: doctor.bio,
+      image: doctor.image,
     });
+    
+    setIsEditing(true);
+    
+    // Switch to Add Doctor tab
+    document.querySelector('[data-value="add"]')?.dispatchEvent(
+      new MouseEvent("click", { bubbles: true })
+    );
   };
   
   const handleUpload = (e: React.FormEvent) => {
@@ -156,16 +201,48 @@ const Admin = () => {
     });
   };
   
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setNewDoctor({
+      id: "",
+      name: "",
+      specialty: "",
+      city: "",
+      address: "",
+      phone: "",
+      email: "",
+      fee: "",
+      experience: "",
+      bio: "",
+      image: "https://randomuser.me/api/portraits/men/1.jpg",
+    });
+  };
+  
+  const handleUpdateAppointmentStatus = (id: string, status: 'approved' | 'rejected') => {
+    const updatedAppointments = appointmentsList.map(appointment => 
+      appointment.id === id ? { ...appointment, status } : appointment
+    );
+    
+    setAppointmentsList(updatedAppointments);
+    
+    toast({
+      title: `Appointment ${status === 'approved' ? 'Approved' : 'Rejected'}`,
+      description: `The appointment has been ${status}.`,
+      duration: 3000,
+    });
+  };
+  
   return (
     <Layout>
       <div className="container mx-auto px-4 py-10">
         <h1 className="text-3xl font-bold mb-8">Admin Panel</h1>
         
         <Tabs defaultValue="doctors">
-          <TabsList className="grid w-full grid-cols-3 mb-8">
+          <TabsList className="grid w-full grid-cols-4 mb-8">
             <TabsTrigger value="doctors">Manage Doctors</TabsTrigger>
             <TabsTrigger value="add">Add Doctor</TabsTrigger>
             <TabsTrigger value="import">Import CSV</TabsTrigger>
+            <TabsTrigger value="appointments">Appointments</TabsTrigger>
           </TabsList>
           
           {/* Manage Doctors Tab */}
@@ -215,7 +292,11 @@ const Admin = () => {
                             <TableCell>₹{doctor.fee}</TableCell>
                             <TableCell>
                               <div className="flex space-x-2">
-                                <Button variant="outline" size="sm">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm"
+                                  onClick={() => handleEditDoctor(doctor)}
+                                >
                                   Edit
                                 </Button>
                                 <Button 
@@ -241,9 +322,11 @@ const Admin = () => {
           <TabsContent value="add">
             <Card>
               <CardHeader>
-                <CardTitle>Add New Doctor</CardTitle>
+                <CardTitle>{isEditing ? "Edit Doctor" : "Add New Doctor"}</CardTitle>
                 <CardDescription>
-                  Add a new doctor to the system by filling out the form below.
+                  {isEditing 
+                    ? "Edit doctor information in the system by updating the form below." 
+                    : "Add a new doctor to the system by filling out the form below."}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -379,9 +462,21 @@ const Admin = () => {
                     />
                   </div>
                   
-                  <Button type="submit" className="bg-medical-600 hover:bg-medical-700">
-                    Add Doctor
-                  </Button>
+                  <div className="flex space-x-2">
+                    <Button type="submit" className="bg-medical-600 hover:bg-medical-700">
+                      {isEditing ? "Update Doctor" : "Add Doctor"}
+                    </Button>
+                    
+                    {isEditing && (
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={handleCancelEdit}
+                      >
+                        Cancel
+                      </Button>
+                    )}
+                  </div>
                 </form>
               </CardContent>
             </Card>
@@ -426,6 +521,93 @@ const Admin = () => {
                     Upload and Process CSV
                   </Button>
                 </form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          {/* Appointments Tab */}
+          <TabsContent value="appointments">
+            <Card>
+              <CardHeader>
+                <CardTitle>Manage Appointments</CardTitle>
+                <CardDescription>
+                  View and manage all patient appointments in the system.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="border rounded-md overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Patient</TableHead>
+                        <TableHead>Doctor</TableHead>
+                        <TableHead>Date & Time</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {appointmentsList.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center py-8">
+                            No appointments found.
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        appointmentsList.map((appointment) => (
+                          <TableRow key={appointment.id}>
+                            <TableCell className="font-medium">
+                              {appointment.patientName}
+                              <div className="text-xs text-gray-500">
+                                {appointment.patientPhone}
+                              </div>
+                            </TableCell>
+                            <TableCell>{appointment.doctorName}</TableCell>
+                            <TableCell>
+                              {appointment.date}
+                              <div className="text-xs text-gray-500">
+                                {appointment.time}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                appointment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                appointment.status === 'approved' ? 'bg-green-100 text-green-800' :
+                                'bg-red-100 text-red-800'
+                              }`}>
+                                {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex space-x-2">
+                                {appointment.status === 'pending' && (
+                                  <>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="bg-green-50 text-green-600 border-green-200 hover:bg-green-100"
+                                      onClick={() => handleUpdateAppointmentStatus(appointment.id, 'approved')}
+                                    >
+                                      <Check className="w-4 h-4 mr-1" /> Approve
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
+                                      onClick={() => handleUpdateAppointmentStatus(appointment.id, 'rejected')}
+                                    >
+                                      <X className="w-4 h-4 mr-1" /> Reject
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

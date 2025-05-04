@@ -28,6 +28,21 @@ export interface Specialty {
   name: string;
 }
 
+export interface Appointment {
+  id: string;
+  patientName: string;
+  patientPhone: string;
+  patientEmail: string;
+  doctorId: string;
+  doctorName: string;
+  date: string;
+  time: string;
+  reason: string;
+  notes: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+}
+
 export const cities: City[] = [
   { id: "delhi", name: "Delhi" },
   { id: "mumbai", name: "Mumbai" },
@@ -436,8 +451,85 @@ let doctorsData = [
   },
 ];
 
+// Sample appointments data
+let appointmentsData = [
+  {
+    id: "a1",
+    patientName: "Raj Kumar",
+    patientPhone: "9876543210",
+    patientEmail: "raj@example.com",
+    doctorId: "1",
+    doctorName: "Dr. Anil Sharma",
+    date: "2025-05-10",
+    time: "10:30 AM",
+    reason: "Regular checkup",
+    notes: "Patient has a history of high blood pressure",
+    status: "pending",
+    createdAt: "2025-05-04T10:30:00Z"
+  },
+  {
+    id: "a2",
+    patientName: "Priya Singh",
+    patientPhone: "8765432109",
+    patientEmail: "priya@example.com",
+    doctorId: "2",
+    doctorName: "Dr. Priya Patel",
+    date: "2025-05-12",
+    time: "11:00 AM",
+    reason: "Skin rash",
+    notes: "Patient is allergic to penicillin",
+    status: "approved",
+    createdAt: "2025-05-03T15:45:00Z"
+  },
+  {
+    id: "a3",
+    patientName: "Amit Verma",
+    patientPhone: "7654321098",
+    patientEmail: "amit@example.com",
+    doctorId: "5",
+    doctorName: "Dr. Vikram Singh",
+    date: "2025-05-15",
+    time: "09:15 AM",
+    reason: "Headache and dizziness",
+    notes: "",
+    status: "pending",
+    createdAt: "2025-05-04T09:20:00Z"
+  },
+  {
+    id: "a4",
+    patientName: "Sneha Gupta",
+    patientPhone: "6543210987",
+    patientEmail: "sneha@example.com",
+    doctorId: "6",
+    doctorName: "Dr. Meera Iyer",
+    date: "2025-05-11",
+    time: "02:30 PM",
+    reason: "Routine gynecological checkup",
+    notes: "First visit",
+    status: "rejected",
+    createdAt: "2025-05-02T14:10:00Z"
+  },
+  {
+    id: "a5",
+    patientName: "Vikash Sharma",
+    patientPhone: "5432109876",
+    patientEmail: "vikash@example.com",
+    doctorId: "3",
+    doctorName: "Dr. Rajesh Kumar",
+    date: "2025-05-14",
+    time: "04:00 PM",
+    reason: "Child vaccination",
+    notes: "6-month vaccines due",
+    status: "approved",
+    createdAt: "2025-05-01T16:30:00Z"
+  }
+];
+
 // Export the doctors array from the data
 export const doctors = doctorsData;
+
+// Export the appointments array
+export const appointments = appointmentsData;
 
 // Add a new doctor to the data
 export const addDoctor = (doctor: Doctor) => {
@@ -457,4 +549,22 @@ export const filterDoctors = (cityFilter: string = "", specialtyFilter: string =
 // Export a function to get a doctor by ID
 export const getDoctorById = (id: string): Doctor | undefined => {
   return doctors.find((doctor) => doctor.id === id);
+};
+
+// Add a new appointment to the data
+export const addAppointment = (appointment: Appointment) => {
+  appointmentsData = [appointment, ...appointmentsData];
+  return appointment;
+};
+
+// Update appointment status
+export const updateAppointmentStatus = (id: string, status: 'pending' | 'approved' | 'rejected') => {
+  appointmentsData = appointmentsData.map(appointment => 
+    appointment.id === id ? { ...appointment, status } : appointment
+  );
+};
+
+// Get appointments by doctor ID
+export const getAppointmentsByDoctorId = (doctorId: string) => {
+  return appointmentsData.filter(appointment => appointment.doctorId === doctorId);
 };
