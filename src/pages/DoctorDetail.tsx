@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useLocation } from "react-router-dom";
 import { Phone, Mail, Calendar, Star, MapPin, Clock, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 
 const DoctorDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
   const [doctor, setDoctor] = useState<Doctor | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -25,8 +26,13 @@ const DoctorDetail = () => {
         setDoctor(null);
       }
       setLoading(false);
+      
+      // Check if we should automatically open booking
+      if (location.state?.bookNow && foundDoctor) {
+        handleBookAppointment();
+      }
     }, 500);
-  }, [id]);
+  }, [id, location.state]);
   
   const handleBookAppointment = () => {
     toast({

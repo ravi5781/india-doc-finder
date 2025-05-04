@@ -5,12 +5,19 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Doctor } from "@/lib/data";
+import { useNavigate } from "react-router-dom";
 
 interface DoctorCardProps {
   doctor: Doctor;
 }
 
 const DoctorCard = ({ doctor }: DoctorCardProps) => {
+  const navigate = useNavigate();
+  
+  const handleBookNow = () => {
+    navigate(`/doctors/${doctor.id}`, { state: { bookNow: true } });
+  };
+
   return (
     <Card className="overflow-hidden transition-all hover:shadow-md">
       <CardContent className="p-0">
@@ -50,12 +57,16 @@ const DoctorCard = ({ doctor }: DoctorCardProps) => {
         <Button 
           variant="outline" 
           className="w-1/2 mr-2 border-medical-600 text-medical-600 hover:bg-medical-50"
+          asChild
         >
           <Link to={`/doctors/${doctor.id}`} className="w-full">
             View Profile
           </Link>
         </Button>
-        <Button className="w-1/2 bg-medical-600 hover:bg-medical-700">
+        <Button 
+          className="w-1/2 bg-medical-600 hover:bg-medical-700"
+          onClick={handleBookNow}
+        >
           Book Now
         </Button>
       </CardFooter>
